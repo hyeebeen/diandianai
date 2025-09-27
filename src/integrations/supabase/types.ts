@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          load_id: string
+          role: string
+          timestamp: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          load_id: string
+          role: string
+          timestamp: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          load_id?: string
+          role?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      loads: {
+        Row: {
+          cargo_type: string
+          created_at: string | null
+          customer: string
+          date: string
+          delivery_address: string
+          delivery_lat: number
+          delivery_lng: number
+          destination_city: string
+          driver: string
+          id: string
+          loading_notes: string | null
+          origin_city: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          status: string
+          temperature_control: string | null
+          updated_at: string | null
+          vehicle: string
+          weight: string
+        }
+        Insert: {
+          cargo_type: string
+          created_at?: string | null
+          customer: string
+          date: string
+          delivery_address: string
+          delivery_lat: number
+          delivery_lng: number
+          destination_city: string
+          driver: string
+          id: string
+          loading_notes?: string | null
+          origin_city: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          status: string
+          temperature_control?: string | null
+          updated_at?: string | null
+          vehicle: string
+          weight: string
+        }
+        Update: {
+          cargo_type?: string
+          created_at?: string | null
+          customer?: string
+          date?: string
+          delivery_address?: string
+          delivery_lat?: number
+          delivery_lng?: number
+          destination_city?: string
+          driver?: string
+          id?: string
+          loading_notes?: string | null
+          origin_city?: string
+          pickup_address?: string
+          pickup_lat?: number
+          pickup_lng?: number
+          status?: string
+          temperature_control?: string | null
+          updated_at?: string | null
+          vehicle?: string
+          weight?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
