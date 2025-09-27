@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { mockLoads, mockChatMessages } from '@/data/mockData';
-import { Load, StepperStep } from '@/types/logistics';
+import { StepperStep } from '@/types/logistics';
+import { useLoads } from '@/hooks/useLoads';
+import { useChat } from '@/hooks/useChat';
 import { Sidebar } from '@/components/Sidebar';
 import { LoadList } from '@/components/LoadList';
 import { Stepper } from '@/components/Stepper';
@@ -9,6 +10,7 @@ import { LoadDetailsCard } from '@/components/LoadDetailsCard';
 import { ChatPanel } from '@/components/ChatPanel';
 import { Star, StarOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import React from 'react';
 
 const stepperSteps: StepperStep[] = ['任务分配', '取货', '运输中', '送货'];
 
@@ -34,13 +36,31 @@ const getStepperProgress = (status: string): number => {
 };
 
 const Index = () => {
-  const [selectedLoadId, setSelectedLoadId] = useState<string>(mockLoads[2].id); // Default to in-transit load
+  const { loads, loading: loadsLoading } = useLoads();
+  const [selectedLoadId, setSelectedLoadId] = useState<string>('');
   const [isFavorited, setIsFavorited] = useState(false);
   
-  const selectedLoad = mockLoads.find(load => load.id === selectedLoadId);
+  // Set default selected load when loads are loaded
+  React.useEffect(() => {
+    if (loads.length > 0 && !selectedLoadId) {
+      const inTransitLoad = loads.find(load => load.status === 'in-transit') || loads[0];
+      setSelectedLoadId(inTransitLoad.id);
+    }
+  }, [loads, selectedLoadId]);
   
+  const selectedLoad = loads.find(load => load.id === selectedLoadId);
+  const { messages } = useChat(selectedLoadId);
+  
+  if (loadsLoading) {
+    return <div className="h-screen bg-background flex items-center justify-center">
+      <div className="text-muted-foreground">加载中...</div>
+    </div>;
+  }
+
   if (!selectedLoad) {
-    return <div>Load not found</div>;
+    return <div className="h-screen bg-background flex items-center justify-center">
+      <div className="text-muted-foreground">运单未找到</div>
+    </div>;
   }
 
   const currentStep = getStepperProgress(selectedLoad.status);
@@ -52,7 +72,7 @@ const Index = () => {
       
       {/* Load List */}
       <LoadList 
-        loads={mockLoads}
+        loads={loads}
         selectedLoadId={selectedLoadId}
         onLoadSelect={setSelectedLoadId}
       />
@@ -91,7 +111,7 @@ const Index = () => {
       </div>
       
       {/* Right Chat Panel */}
-      <ChatPanel messages={mockChatMessages} />
+      <ChatPanel messages={messages} loadId={selectedLoadId} />
     </div>
   );
 };
