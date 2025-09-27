@@ -34,22 +34,33 @@ export function useLoads() {
         mode: '公路运输',
         equipment: load.vehicle,
         commodity: load.cargo_type,
+        packingType: '标准包装',
+        pickupCoords: [load.pickup_lat, load.pickup_lng] as [number, number],
+        deliveryCoords: [load.delivery_lat, load.delivery_lng] as [number, number],
         priority: 'normal',
         tags: [load.status === 'in-transit' ? '运输中' : '待处理'],
         stops: [
           {
+            id: `${load.id}_pickup`,
             type: 'pickup' as const,
-            location: load.pickup_address,
-            coordinates: [load.pickup_lat, load.pickup_lng] as [number, number],
-            time: '08:00',
-            status: 'completed' as const
+            address: load.pickup_address,
+            city: load.origin_city,
+            state: '',
+            zipCode: '',
+            date: load.date,
+            timeWindow: '08:00-10:00',
+            coordinates: [load.pickup_lat, load.pickup_lng] as [number, number]
           },
           {
+            id: `${load.id}_delivery`,
             type: 'delivery' as const,
-            location: load.delivery_address,
-            coordinates: [load.delivery_lat, load.delivery_lng] as [number, number],
-            time: '18:00',
-            status: 'pending' as const
+            address: load.delivery_address,
+            city: load.destination_city,
+            state: '',
+            zipCode: '',
+            date: load.date,
+            timeWindow: '16:00-18:00',
+            coordinates: [load.delivery_lat, load.delivery_lng] as [number, number]
           }
         ]
       }))
