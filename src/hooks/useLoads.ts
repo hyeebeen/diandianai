@@ -9,11 +9,14 @@ export function useLoads() {
 
   const fetchLoads = async () => {
     try {
+      console.log('fetchLoads started');
       setLoading(true)
       const { data, error } = await supabase
         .from('loads')
         .select('*')
         .order('created_at', { ascending: false })
+
+      console.log('Supabase query result:', { data, error });
 
       if (error) throw error
 
@@ -58,6 +61,7 @@ export function useLoads() {
         ]
       }))
 
+      console.log('Transformed loads:', transformedLoads);
       setLoads(transformedLoads)
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载运单数据失败')

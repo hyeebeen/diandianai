@@ -7,7 +7,14 @@ export function useChat(loadId: string) {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
 
+  console.log('useChat called with loadId:', loadId);
+
   const fetchMessages = async () => {
+    if (!loadId) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true)
       const { data, error } = await supabase

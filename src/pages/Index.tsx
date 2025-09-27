@@ -40,6 +40,9 @@ const Index = () => {
   const [selectedLoadId, setSelectedLoadId] = useState<string>('');
   const [isFavorited, setIsFavorited] = useState(false);
   
+  // Debug logging
+  console.log('Index component render:', { loads, loading, error, selectedLoadId });
+  
   // Set default selected load when loads are loaded
   useEffect(() => {
     if (loads.length > 0 && !selectedLoadId) {
@@ -50,9 +53,22 @@ const Index = () => {
   const selectedLoad = loads.find(load => load.id === selectedLoadId);
   const { messages } = useChat(selectedLoadId);
   
+  // Show error if there's one
+  if (error) {
+    return <div className="h-screen bg-background flex items-center justify-center">
+      <div className="text-red-500">错误: {error}</div>
+    </div>;
+  }
+  
   if (loading) {
     return <div className="h-screen bg-background flex items-center justify-center">
       <div className="text-muted-foreground">加载中...</div>
+    </div>;
+  }
+
+  if (loads.length === 0) {
+    return <div className="h-screen bg-background flex items-center justify-center">
+      <div className="text-muted-foreground">没有找到运单数据</div>
     </div>;
   }
 
