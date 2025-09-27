@@ -16,13 +16,11 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, loadId, className }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
-  // const { sendMessage, sending } = useChat(loadId);
-  const sending = false;
+  const { sendMessage, sending } = useChat(loadId);
 
   const handleSend = async () => {
     if (inputValue.trim() && !sending) {
-      // 暂时禁用发送，直到 Supabase 配置完成
-      console.log('需要先配置 Supabase 连接');
+      await sendMessage(inputValue);
       setInputValue('');
     }
   };

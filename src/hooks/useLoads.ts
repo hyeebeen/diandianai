@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Load } from '@/types/logistics'
+import { supabase } from '@/integrations/supabase/client'
+import { Load, LoadStatus } from '@/types/logistics'
 
 export function useLoads() {
   const [loads, setLoads] = useState<Load[]>([])
@@ -21,24 +21,17 @@ export function useLoads() {
         id: load.id,
         origin: load.origin_city,
         destination: load.destination_city,
-        status: load.status,
+        status: load.status as LoadStatus,
         date: load.date,
         customer: load.customer,
-        vehicle: load.vehicle,
-        driver: load.driver,
-        weight: load.weight,
-        cargoType: load.cargo_type,
-        temperatureControl: load.temperature_control,
-        loadingNotes: load.loading_notes,
-        notes: load.loading_notes || '',
         mode: '公路运输',
         equipment: load.vehicle,
+        weight: load.weight,
         commodity: load.cargo_type,
         packingType: '标准包装',
         pickupCoords: [load.pickup_lat, load.pickup_lng] as [number, number],
         deliveryCoords: [load.delivery_lat, load.delivery_lng] as [number, number],
-        priority: 'normal',
-        tags: [load.status === 'in-transit' ? '运输中' : '待处理'],
+        notes: load.loading_notes || '',
         stops: [
           {
             id: `${load.id}_pickup`,
