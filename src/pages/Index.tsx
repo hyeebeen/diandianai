@@ -10,7 +10,7 @@ import { ChatPanel } from '@/components/ChatPanel';
 import { Star, StarOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const stepperSteps: StepperStep[] = ['Assignment', 'Pickup', 'In transit', 'Delivery'];
+const stepperSteps: StepperStep[] = ['任务分配', '取货', '运输中', '送货'];
 
 const getStepperProgress = (status: string): number => {
   switch (status) {

@@ -49,4 +49,4 @@ export interface Attachment {
   participants?: string[];
 }
 
-export type StepperStep = 'Assignment' | 'Pickup' | 'In transit' | 'Delivery';
+export type StepperStep = '任务分配' | '取货' | '运输中' | '送货';

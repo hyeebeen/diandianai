@@ -13,7 +13,7 @@ export function RouteCard({ load, className }: RouteCardProps) {
   return (
     <Card className={cn('', className)}>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">Route</CardTitle>
+        <CardTitle className="text-lg">运输路线</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Map */}
@@ -36,7 +36,7 @@ export function RouteCard({ load, className }: RouteCardProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium capitalize text-sm">
-                    {stop.type}
+                    {stop.type === 'pickup' ? '取货' : '送货'}
                   </span>
                 </div>
                 
@@ -60,7 +60,7 @@ export function RouteCard({ load, className }: RouteCardProps) {
         
         <div className="text-xs text-muted-foreground pt-2 border-t">
           <button className="text-primary hover:underline">
-            See more
+            查看更多
           </button>
         </div>
       </CardContent>

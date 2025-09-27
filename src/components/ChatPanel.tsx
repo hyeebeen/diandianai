@@ -34,8 +34,8 @@ export function ChatPanel({ messages, className }: ChatPanelProps) {
       <Tabs defaultValue="chat" className="flex flex-col h-full">
         <div className="border-b px-4 pt-4">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="chat">聊天</TabsTrigger>
+            <TabsTrigger value="summary">摘要</TabsTrigger>
           </TabsList>
         </div>
 
@@ -60,7 +60,7 @@ export function ChatPanel({ messages, className }: ChatPanelProps) {
               
               <div className="flex-1 relative">
                 <Input
-                  placeholder="Ask Augie"
+                  placeholder="询问小智"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -81,7 +81,7 @@ export function ChatPanel({ messages, className }: ChatPanelProps) {
 
         <TabsContent value="summary" className="flex-1 p-4">
           <div className="text-sm text-muted-foreground">
-            Load summary and key insights will appear here.
+            运单摘要和关键洞察将在此处显示。
           </div>
         </TabsContent>
       </Tabs>

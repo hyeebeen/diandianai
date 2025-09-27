@@ -51,12 +51,12 @@ export function RouteMap({ load, className }: RouteMapProps) {
     // Add pickup marker
     const pickupMarker = L.marker(load.pickupCoords, { icon: pickupIcon })
       .addTo(map)
-      .bindPopup(`<b>Pickup</b><br/>${load.stops[0]?.address || ''}`);
+      .bindPopup(`<b>取货</b><br/>${load.stops[0]?.address || ''}`);
 
     // Add delivery marker  
     const deliveryMarker = L.marker(load.deliveryCoords, { icon: deliveryIcon })
       .addTo(map)
-      .bindPopup(`<b>Delivery</b><br/>${load.stops[1]?.address || ''}`);
+      .bindPopup(`<b>送货</b><br/>${load.stops[1]?.address || ''}`);
 
     // Draw route line
     const routeCoords = [load.pickupCoords, load.deliveryCoords];

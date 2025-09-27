@@ -26,9 +26,9 @@ export function LoadList({ loads, selectedLoadId, onLoadSelect, className }: Loa
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Loads</h2>
+          <h2 className="text-lg font-semibold">运单</h2>
           <div className="text-sm text-muted-foreground">
-            1-10 of 123
+            1-10 / 123
           </div>
         </div>
         
@@ -36,7 +36,7 @@ export function LoadList({ loads, selectedLoadId, onLoadSelect, className }: Loa
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Type to search..."
+            placeholder="输入搜索内容..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-9"

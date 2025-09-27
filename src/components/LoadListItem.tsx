@@ -29,13 +29,13 @@ const statusDots = {
 };
 
 const statusLabels = {
-  'unassigned': 'Unassigned',
-  'assigned': 'Assigned',
-  'dispatched': 'Dispatched',
-  'in-transit': 'In transit',
-  'at-pickup': 'At pickup',
-  'loaded': 'Loaded',
-  'delivered': 'Delivered',
+  'unassigned': '未分配',
+  'assigned': '已分配',
+  'dispatched': '已调度',
+  'in-transit': '运输中',
+  'at-pickup': '取货中',
+  'loaded': '已装车',
+  'delivered': '已送达',
 };
 
 export function LoadListItem({ load, isSelected, onClick }: LoadListItemProps) {
