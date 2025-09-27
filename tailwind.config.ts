@@ -47,6 +47,27 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        emerald: {
+          50: "hsl(var(--emerald-50))",
+          100: "hsl(var(--emerald-100))",
+          500: "hsl(var(--emerald-500))",
+          600: "hsl(var(--emerald-600))",
+          700: "hsl(var(--emerald-700))",
+        },
+        orange: {
+          500: "hsl(var(--orange-500))",
+        },
+        blue: {
+          500: "hsl(var(--blue-500))",
+          600: "hsl(var(--blue-600))",
+        },
+        status: {
+          assigned: "hsl(var(--status-assigned))",
+          pickup: "hsl(var(--status-pickup))",
+          transit: "hsl(var(--status-transit))",
+          delivery: "hsl(var(--status-delivery))",
+          delivered: "hsl(var(--status-delivered))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
