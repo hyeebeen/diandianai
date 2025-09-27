@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { mockLoads } from '@/data/mockData';
 import { StepperStep } from '@/types/logistics';
-import { useLoads } from '@/hooks/useLoads';
-import { useChat } from '@/hooks/useChat';
+// import { useLoads } from '@/hooks/useLoads';
+// import { useChat } from '@/hooks/useChat';
 import { Sidebar } from '@/components/Sidebar';
 import { LoadList } from '@/components/LoadList';
 import { Stepper } from '@/components/Stepper';
@@ -36,22 +37,21 @@ const getStepperProgress = (status: string): number => {
 };
 
 const Index = () => {
-  const { loads, loading: loadsLoading } = useLoads();
-  const [selectedLoadId, setSelectedLoadId] = useState<string>('');
+  // 暂时使用 mock 数据，直到 Supabase 配置完成
+  const loads = mockLoads;
+  const loading = false;
+  const [selectedLoadId, setSelectedLoadId] = useState<string>(mockLoads[2].id);
   const [isFavorited, setIsFavorited] = useState(false);
   
-  // Set default selected load when loads are loaded
-  React.useEffect(() => {
-    if (loads.length > 0 && !selectedLoadId) {
-      const inTransitLoad = loads.find(load => load.status === 'in-transit') || loads[0];
-      setSelectedLoadId(inTransitLoad.id);
-    }
-  }, [loads, selectedLoadId]);
-  
   const selectedLoad = loads.find(load => load.id === selectedLoadId);
-  const { messages } = useChat(selectedLoadId);
   
-  if (loadsLoading) {
+  // 暂时使用 mock 消息数据
+  const messages = [
+    { id: '1', role: 'system' as const, content: '运单已分配，正在等待Supabase配置', timestamp: '10:00' },
+    { id: '2', role: 'agent' as const, content: '请先配置Supabase连接，然后就可以使用真实的AI聊天功能了', timestamp: '10:01' }
+  ];
+  
+  if (loading) {
     return <div className="h-screen bg-background flex items-center justify-center">
       <div className="text-muted-foreground">加载中...</div>
     </div>;
