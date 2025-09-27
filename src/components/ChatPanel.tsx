@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ChatMessage } from '@/types/logistics';
-import { useChat } from '@/hooks/useChat';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,17 +9,15 @@ import { Send, Paperclip } from 'lucide-react';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
-  loadId: string;
   className?: string;
 }
 
-export function ChatPanel({ messages, loadId, className }: ChatPanelProps) {
+export function ChatPanel({ messages, className }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
-  const { sendMessage, sending } = useChat(loadId);
 
-  const handleSend = async () => {
-    if (inputValue.trim() && !sending) {
-      await sendMessage(inputValue);
+  const handleSend = () => {
+    if (inputValue.trim()) {
+      // Handle sending message
       setInputValue('');
     }
   };
@@ -74,7 +71,6 @@ export function ChatPanel({ messages, loadId, className }: ChatPanelProps) {
                   variant="ghost"
                   className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
                   onClick={handleSend}
-                  disabled={sending}
                 >
                   <Send className="h-3 w-3" />
                 </Button>

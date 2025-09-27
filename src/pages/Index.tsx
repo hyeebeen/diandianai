@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { StepperStep } from '@/types/logistics';
-import { useLoads } from '@/hooks/useLoads';
-import { useChat } from '@/hooks/useChat';
+import { useState } from 'react';
+import { mockLoads, mockChatMessages } from '@/data/mockData';
+import { Load, StepperStep } from '@/types/logistics';
 import { Sidebar } from '@/components/Sidebar';
 import { LoadList } from '@/components/LoadList';
 import { Stepper } from '@/components/Stepper';
@@ -10,7 +9,6 @@ import { LoadDetailsCard } from '@/components/LoadDetailsCard';
 import { ChatPanel } from '@/components/ChatPanel';
 import { Star, StarOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import React from 'react';
 
 const stepperSteps: StepperStep[] = ['任务分配', '取货', '运输中', '送货'];
 
@@ -36,46 +34,13 @@ const getStepperProgress = (status: string): number => {
 };
 
 const Index = () => {
-  const { loads, loading, error } = useLoads();
-  const [selectedLoadId, setSelectedLoadId] = useState<string>('');
+  const [selectedLoadId, setSelectedLoadId] = useState<string>(mockLoads[2].id); // Default to in-transit load
   const [isFavorited, setIsFavorited] = useState(false);
   
-  // Debug logging
-  console.log('Index component render:', { loads, loading, error, selectedLoadId });
+  const selectedLoad = mockLoads.find(load => load.id === selectedLoadId);
   
-  // Set default selected load when loads are loaded
-  useEffect(() => {
-    if (loads.length > 0 && !selectedLoadId) {
-      setSelectedLoadId(loads[0].id);
-    }
-  }, [loads, selectedLoadId]);
-  
-  const selectedLoad = loads.find(load => load.id === selectedLoadId);
-  const { messages } = useChat(selectedLoadId);
-  
-  // Show error if there's one
-  if (error) {
-    return <div className="h-screen bg-background flex items-center justify-center">
-      <div className="text-red-500">错误: {error}</div>
-    </div>;
-  }
-  
-  if (loading) {
-    return <div className="h-screen bg-background flex items-center justify-center">
-      <div className="text-muted-foreground">加载中...</div>
-    </div>;
-  }
-
-  if (loads.length === 0) {
-    return <div className="h-screen bg-background flex items-center justify-center">
-      <div className="text-muted-foreground">没有找到运单数据</div>
-    </div>;
-  }
-
   if (!selectedLoad) {
-    return <div className="h-screen bg-background flex items-center justify-center">
-      <div className="text-muted-foreground">运单未找到</div>
-    </div>;
+    return <div>Load not found</div>;
   }
 
   const currentStep = getStepperProgress(selectedLoad.status);
@@ -87,7 +52,7 @@ const Index = () => {
       
       {/* Load List */}
       <LoadList 
-        loads={loads}
+        loads={mockLoads}
         selectedLoadId={selectedLoadId}
         onLoadSelect={setSelectedLoadId}
       />
@@ -126,7 +91,7 @@ const Index = () => {
       </div>
       
       {/* Right Chat Panel */}
-      <ChatPanel messages={messages} loadId={selectedLoadId} />
+      <ChatPanel messages={mockChatMessages} />
     </div>
   );
 };
