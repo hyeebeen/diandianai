@@ -290,7 +290,7 @@ export const mockChatMessages: ChatMessage[] = [
   {
     id: '1',
     role: 'system',
-    content: '早上好！小智正在处理过去30天的货物追踪与跟踪工作。',
+    content: '早上好！点点精灵正在处理过去30天的货物追踪与跟踪工作。',
     timestamp: '3月11日 上午9:51'
   },
   {
@@ -343,9 +343,9 @@ export const mockChatMessages: ChatMessage[] = [
     attachments: [{
       id: 'call-1',
       type: 'call',
-      name: '小智 <> 小王，调度员',
+      name: '点点精灵 <> 小王，调度员',
       duration: '0:10',
-      participants: ['小智', '小王']
+      participants: ['点点精灵', '小王']
     }]
   }
 ];
