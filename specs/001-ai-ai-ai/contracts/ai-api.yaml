@@ -1,0 +1,486 @@
+openapi: 3.0.3
+info:
+  title: AI Assistant API
+  description: AI助手交互和配置管理API
+  version: 1.0.0
+
+paths:
+  /api/ai/chat:
+    post:
+      summary: AI助手对话
+      description: 与AI助手进行对话交互，处理物流相关请求
+      tags:
+        - AI Assistant
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: AI响应成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/ai/config:
+    get:
+      summary: 获取AI模型配置列表
+      description: 获取当前用户可用的AI模型配置（管理员可见所有配置）
+      tags:
+        - AI Configuration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 配置列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIModelConfig'
+
+    post:
+      summary: 创建AI模型配置
+      description: 创建新的AI模型配置（仅管理员权限）
+      tags:
+        - AI Configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAIConfigRequest'
+      responses:
+        '201':
+          description: 配置创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModelConfig'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/ai/config/{configId}:
+    put:
+      summary: 更新AI模型配置
+      description: 更新指定的AI模型配置（仅管理员权限）
+      tags:
+        - AI Configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: configId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 配置ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAIConfigRequest'
+      responses:
+        '200':
+          description: 配置更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModelConfig'
+
+    delete:
+      summary: 删除AI模型配置
+      description: 删除指定的AI模型配置（仅管理员权限）
+      tags:
+        - AI Configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: configId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 配置ID
+      responses:
+        '200':
+          description: 配置删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/ai/interactions:
+    get:
+      summary: 获取AI交互历史
+      description: 获取用户的AI交互记录列表
+      tags:
+        - AI Assistant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: 每页数量
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [wechat, phone, sms, web]
+          description: 沟通渠道过滤
+      responses:
+        '200':
+          description: 交互历史列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionListResponse'
+
+  /api/ai/summary:
+    get:
+      summary: 获取AI交互摘要
+      description: 获取用户的AI交互摘要报告
+      tags:
+        - AI Assistant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: weekly
+          description: 摘要周期
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 开始日期
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 结束日期
+      responses:
+        '200':
+          description: 摘要报告
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSummary'
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+        - channel
+      properties:
+        message:
+          type: string
+          description: 用户消息
+          example: "帮我创建一个从北京到上海的运单"
+        channel:
+          type: string
+          enum: [wechat, phone, sms, web]
+          description: 沟通渠道
+        sessionId:
+          type: string
+          description: 会话ID（用于上下文连续性）
+          example: "session_123"
+        context:
+          type: object
+          description: 额外上下文信息
+          additionalProperties: true
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+          description: AI回复内容
+          example: "我来帮您创建运单。请提供发货方和收货方的详细信息。"
+        sessionId:
+          type: string
+          description: 会话ID
+        responseTime:
+          type: integer
+          description: 响应时间（毫秒）
+          example: 1250
+        actionTaken:
+          type: string
+          description: 执行的操作
+          example: "SHIPMENT_CREATION_INITIATED"
+        relatedData:
+          type: object
+          description: 相关业务数据
+          additionalProperties: true
+
+    AIModelConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 配置ID
+        name:
+          type: string
+          description: 配置名称
+          example: "GPT-4生产配置"
+        provider:
+          type: string
+          enum: [openai, claude, wenxin, zhipu, tongyi]
+          description: AI服务提供商
+        model:
+          type: string
+          description: 模型名称
+          example: "gpt-4"
+        isActive:
+          type: boolean
+          description: 是否激活
+        companyId:
+          type: string
+          description: 所属公司ID（null为全局配置）
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    CreateAIConfigRequest:
+      type: object
+      required:
+        - name
+        - provider
+        - endpoint
+        - apiKey
+        - model
+      properties:
+        name:
+          type: string
+          description: 配置名称
+        provider:
+          type: string
+          enum: [openai, claude, wenxin, zhipu, tongyi]
+          description: AI服务提供商
+        endpoint:
+          type: string
+          description: API端点URL
+        apiKey:
+          type: string
+          description: API密钥
+        model:
+          type: string
+          description: 模型名称
+        parameters:
+          $ref: '#/components/schemas/AIParameters'
+        companyId:
+          type: string
+          description: 所属公司ID（空为全局配置）
+
+    UpdateAIConfigRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 配置名称
+        endpoint:
+          type: string
+          description: API端点URL
+        apiKey:
+          type: string
+          description: API密钥
+        model:
+          type: string
+          description: 模型名称
+        parameters:
+          $ref: '#/components/schemas/AIParameters'
+        isActive:
+          type: boolean
+          description: 是否激活
+
+    AIParameters:
+      type: object
+      properties:
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: 温度参数
+          example: 0.7
+        maxTokens:
+          type: integer
+          minimum: 1
+          maximum: 4096
+          description: 最大token数
+          example: 2048
+        topP:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: top-p参数
+        frequencyPenalty:
+          type: number
+          minimum: -2
+          maximum: 2
+          description: 频率惩罚
+        presencePenalty:
+          type: number
+          minimum: -2
+          maximum: 2
+          description: 存在惩罚
+
+    InteractionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIInteraction'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    AIInteraction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 交互ID
+        sessionId:
+          type: string
+          description: 会话ID
+        channel:
+          type: string
+          enum: [wechat, phone, sms, web]
+          description: 沟通渠道
+        userMessage:
+          type: string
+          description: 用户消息
+        aiResponse:
+          type: string
+          description: AI响应
+        responseTime:
+          type: integer
+          description: 响应时间（毫秒）
+        relatedShipmentId:
+          type: string
+          description: 关联运单ID
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    BusinessSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 摘要ID
+        period:
+          type: string
+          enum: [daily, weekly, monthly]
+          description: 摘要周期
+        startDate:
+          type: string
+          format: date
+          description: 开始日期
+        endDate:
+          type: string
+          format: date
+          description: 结束日期
+        totalInteractions:
+          type: integer
+          description: 总交互次数
+        shipmentsCreated:
+          type: integer
+          description: 创建的运单数
+        shipmentsCompleted:
+          type: integer
+          description: 完成的运单数
+        keyTopics:
+          type: array
+          items:
+            type: string
+          description: 主要话题
+        commonTasks:
+          type: array
+          items:
+            type: string
+          description: 常见任务
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: AI建议
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: 当前页码
+        limit:
+          type: integer
+          description: 每页数量
+        total:
+          type: integer
+          description: 总记录数
+        pages:
+          type: integer
+          description: 总页数
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "操作成功"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: 错误代码
+        message:
+          type: string
+          description: 错误描述
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

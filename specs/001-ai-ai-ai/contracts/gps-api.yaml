@@ -1,0 +1,541 @@
+openapi: 3.0.3
+info:
+  title: GPS Tracking API
+  description: GPS定位和实时追踪API - 支持G7设备和司机小程序
+  version: 1.0.0
+
+paths:
+  /api/gps/locations:
+    post:
+      summary: 上报GPS位置
+      description: 接收来自G7设备或司机小程序的GPS位置数据
+      tags:
+        - GPS Tracking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/SingleLocationReport'
+                - $ref: '#/components/schemas/BatchLocationReport'
+      responses:
+        '200':
+          description: 位置数据接收成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '400':
+          description: 数据格式错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/gps/vehicles/{vehicleId}/current:
+    get:
+      summary: 获取车辆当前位置
+      description: 获取指定车辆的最新GPS位置信息
+      tags:
+        - GPS Tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 车辆ID
+      responses:
+        '200':
+          description: 当前位置信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentLocation'
+        '404':
+          description: 车辆不存在或无位置数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/gps/vehicles/{vehicleId}/history:
+    get:
+      summary: 获取车辆历史轨迹
+      description: 获取指定车辆在指定时间范围内的历史GPS轨迹
+      tags:
+        - GPS Tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 车辆ID
+        - name: startTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间
+        - name: endTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间
+        - name: interval
+          in: query
+          schema:
+            type: integer
+            default: 60
+          description: 采样间隔（秒）
+      responses:
+        '200':
+          description: 历史轨迹数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryTrack'
+
+  /api/gps/routes/{routeId}/live:
+    get:
+      summary: 获取路线实时信息
+      description: 获取运输路线的实时GPS数据（WebSocket升级）
+      tags:
+        - Real-time Tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 路线ID
+      responses:
+        '101':
+          description: WebSocket连接升级
+        '404':
+          description: 路线不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/gps/geofences:
+    get:
+      summary: 获取地理围栏列表
+      description: 获取当前用户公司的地理围栏配置
+      tags:
+        - Geofencing
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 地理围栏列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Geofence'
+
+    post:
+      summary: 创建地理围栏
+      description: 创建新的地理围栏区域
+      tags:
+        - Geofencing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGeofenceRequest'
+      responses:
+        '201':
+          description: 地理围栏创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Geofence'
+
+  /api/gps/alerts:
+    get:
+      summary: 获取GPS告警列表
+      description: 获取GPS相关的告警信息（如偏离路线、长时间停留等）
+      tags:
+        - GPS Alerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: query
+          schema:
+            type: string
+          description: 车辆ID过滤
+        - name: alertType
+          in: query
+          schema:
+            type: string
+            enum: [route_deviation, long_stop, speeding, geofence_violation]
+          description: 告警类型过滤
+        - name: startTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 开始时间
+        - name: endTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 结束时间
+      responses:
+        '200':
+          description: 告警列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GPSAlert'
+
+components:
+  schemas:
+    SingleLocationReport:
+      type: object
+      required:
+        - vehicleId
+        - coordinates
+        - timestamp
+        - source
+      properties:
+        vehicleId:
+          type: string
+          description: 车辆ID
+        coordinates:
+          $ref: '#/components/schemas/GeoCoordinates'
+        timestamp:
+          type: string
+          format: date-time
+          description: GPS时间戳
+        speed:
+          type: number
+          minimum: 0
+          description: 速度（km/h）
+        heading:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: 方向角（度）
+        altitude:
+          type: number
+          description: 海拔高度（米）
+        accuracy:
+          type: number
+          minimum: 0
+          description: 定位精度（米）
+        source:
+          type: string
+          enum: [g7_device, driver_app, manual]
+          description: 数据来源
+        rawData:
+          type: object
+          description: 原始GPS数据
+          additionalProperties: true
+
+    BatchLocationReport:
+      type: object
+      required:
+        - vehicleId
+        - locations
+      properties:
+        vehicleId:
+          type: string
+          description: 车辆ID
+        locations:
+          type: array
+          items:
+            type: object
+            required:
+              - coordinates
+              - timestamp
+            properties:
+              coordinates:
+                $ref: '#/components/schemas/GeoCoordinates'
+              timestamp:
+                type: string
+                format: date-time
+                description: GPS时间戳
+              speed:
+                type: number
+                description: 速度（km/h）
+              heading:
+                type: number
+                description: 方向角（度）
+              altitude:
+                type: number
+                description: 海拔高度（米）
+              accuracy:
+                type: number
+                description: 定位精度（米）
+        source:
+          type: string
+          enum: [g7_device, driver_app, manual]
+          description: 数据来源
+
+    LocationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        received:
+          type: integer
+          description: 成功接收的位置点数量
+        processed:
+          type: integer
+          description: 成功处理的位置点数量
+        errors:
+          type: array
+          items:
+            type: string
+          description: 处理错误信息
+
+    CurrentLocation:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          description: 车辆ID
+        plateNumber:
+          type: string
+          description: 车牌号
+        coordinates:
+          $ref: '#/components/schemas/GeoCoordinates'
+        address:
+          type: string
+          description: 地址描述
+        timestamp:
+          type: string
+          format: date-time
+          description: 位置时间戳
+        speed:
+          type: number
+          description: 当前速度（km/h）
+        heading:
+          type: number
+          description: 行驶方向（度）
+        status:
+          type: string
+          enum: [moving, stopped, offline]
+          description: 车辆状态
+        source:
+          type: string
+          enum: [g7_device, driver_app, manual]
+          description: 数据来源
+        lastUpdateTime:
+          type: string
+          format: date-time
+          description: 最后更新时间
+
+    HistoryTrack:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          description: 车辆ID
+        startTime:
+          type: string
+          format: date-time
+          description: 开始时间
+        endTime:
+          type: string
+          format: date-time
+          description: 结束时间
+        totalDistance:
+          type: number
+          description: 总行驶距离（千米）
+        totalDuration:
+          type: integer
+          description: 总行驶时长（分钟）
+        averageSpeed:
+          type: number
+          description: 平均速度（km/h）
+        maxSpeed:
+          type: number
+          description: 最高速度（km/h）
+        track:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackPoint'
+          description: GPS轨迹点
+
+    TrackPoint:
+      type: object
+      properties:
+        coordinates:
+          $ref: '#/components/schemas/GeoCoordinates'
+        timestamp:
+          type: string
+          format: date-time
+          description: 时间戳
+        speed:
+          type: number
+          description: 速度（km/h）
+        heading:
+          type: number
+          description: 方向角（度）
+        accuracy:
+          type: number
+          description: 定位精度（米）
+        source:
+          type: string
+          enum: [g7_device, driver_app, manual]
+          description: 数据来源
+
+    GeoCoordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+          description: 纬度
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+          description: 经度
+
+    Geofence:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 围栏ID
+        name:
+          type: string
+          description: 围栏名称
+          example: "北京仓库"
+        type:
+          type: string
+          enum: [circle, polygon]
+          description: 围栏类型
+        center:
+          $ref: '#/components/schemas/GeoCoordinates'
+        radius:
+          type: number
+          description: 半径（米，仅圆形围栏）
+        polygon:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoCoordinates'
+          description: 多边形顶点（仅多边形围栏）
+        isActive:
+          type: boolean
+          description: 是否激活
+        companyId:
+          type: string
+          description: 所属公司ID
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+
+    CreateGeofenceRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: 围栏名称
+        type:
+          type: string
+          enum: [circle, polygon]
+          description: 围栏类型
+        center:
+          $ref: '#/components/schemas/GeoCoordinates'
+        radius:
+          type: number
+          description: 半径（米，圆形围栏必填）
+        polygon:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoCoordinates'
+          description: 多边形顶点（多边形围栏必填）
+
+    GPSAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 告警ID
+        vehicleId:
+          type: string
+          description: 车辆ID
+        alertType:
+          type: string
+          enum: [route_deviation, long_stop, speeding, geofence_violation]
+          description: 告警类型
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: 严重程度
+        message:
+          type: string
+          description: 告警消息
+        location:
+          $ref: '#/components/schemas/GeoCoordinates'
+        address:
+          type: string
+          description: 告警地址
+        timestamp:
+          type: string
+          format: date-time
+          description: 告警时间
+        isResolved:
+          type: boolean
+          description: 是否已解决
+        resolvedAt:
+          type: string
+          format: date-time
+          description: 解决时间
+        metadata:
+          type: object
+          description: 告警相关的额外数据
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: 错误代码
+        message:
+          type: string
+          description: 错误描述
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
