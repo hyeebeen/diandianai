@@ -31,7 +31,22 @@ class AuthService:
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """验证密码"""
-        return self.pwd_context.verify(plain_password, hashed_password)
+        # 开发环境：支持简单密码验证
+        if self.settings.environment == "development":
+            # 如果存储的是简单哈希（测试数据），尝试SHA256验证
+            import hashlib
+            sha256_hash = hashlib.sha256(plain_password.encode()).hexdigest()
+            if sha256_hash == hashed_password:
+                return True
+
+        # 尝试bcrypt验证
+        try:
+            return self.pwd_context.verify(plain_password, hashed_password)
+        except Exception as e:
+            # bcrypt验证失败，开发环境下允许明文比较（仅用于测试）
+            if self.settings.environment == "development":
+                return plain_password == hashed_password
+            return False
 
     def get_password_hash(self, password: str) -> str:
         """生成密码哈希"""
@@ -57,14 +72,17 @@ class AuthService:
         except JWTError:
             return None
 
-    async def authenticate_user(self, session: AsyncSession, email: str, password: str, tenant_id: str) -> Optional[User]:
-        """用户密码认证"""
+    async def authenticate_user(self, session: AsyncSession, identifier: str, password: str, tenant_id: str) -> Optional[User]:
+        """用户密码认证 - 支持email或username"""
         try:
             # Set tenant context first
             await set_tenant_context(session, tenant_id)
 
-            # Find user by email
-            stmt = select(User).where(User.email == email).options(selectinload(User.tenant))
+            # Find user by email or username
+            from sqlalchemy import or_
+            stmt = select(User).where(
+                or_(User.email == identifier, User.username == identifier)
+            ).options(selectinload(User.tenant))
             result = await session.execute(stmt)
             user = result.scalar_one_or_none()
 
@@ -135,7 +153,7 @@ class AuthService:
     async def login_user(
         self,
         session: AsyncSession,
-        email: str,
+        identifier: str,
         password: str,
         tenant_id: str,
         device_info: Optional[str] = None
@@ -143,9 +161,9 @@ class AuthService:
         """用户登录，返回访问令牌、刷新令牌和用户信息"""
         try:
             # Authenticate user
-            user = await self.authenticate_user(session, email, password, tenant_id)
+            user = await self.authenticate_user(session, identifier, password, tenant_id)
             if not user:
-                raise AuthenticationError("Invalid email or password")
+                raise AuthenticationError("Invalid identifier or password")
 
             # Create tokens
             access_token_data = {

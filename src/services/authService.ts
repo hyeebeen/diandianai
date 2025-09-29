@@ -23,7 +23,7 @@ export interface User {
 }
 
 export interface LoginRequest {
-  username: string;
+  identifier: string;  // 后端期望identifier字段（email or username）
   password: string;
   tenant_id?: string;
 }
@@ -72,9 +72,40 @@ export class AuthService {
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await httpClient.post<LoginResponse>(
-      '/api/auth/login',
+      '/api/v1/auth/login',
       credentials,
       { skipAuth: true }
+    );
+
+    // 存储认证信息
+    tokenManager.setTokens(
+      response.access_token,
+      response.refresh_token,
+      response.user.tenant_id
+    );
+
+    this.currentUser = response.user;
+
+    // 存储用户信息到localStorage
+    localStorage.setItem('current_user', JSON.stringify(response.user));
+
+    return response;
+  }
+
+  /**
+   * 用户登录（指定租户ID）
+   * 确保X-Tenant-ID头被正确发送
+   */
+  async loginWithTenant(credentials: LoginRequest, tenantId: string): Promise<LoginResponse> {
+    const response = await httpClient.post<LoginResponse>(
+      '/api/v1/auth/login',
+      credentials,
+      {
+        skipAuth: true,
+        headers: {
+          'X-Tenant-ID': tenantId
+        }
+      }
     );
 
     // 存储认证信息
@@ -101,7 +132,7 @@ export class AuthService {
     user?: User;
     requires_verification?: boolean;
   }> {
-    return httpClient.post('/api/auth/register', userData, { skipAuth: true });
+    return httpClient.post('/api/v1/auth/register', userData, { skipAuth: true });
   }
 
   /**
@@ -109,7 +140,7 @@ export class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await httpClient.post('/api/auth/logout');
+      await httpClient.post('/api/v1/auth/logout');
     } catch (error) {
       console.warn('Logout request failed:', error);
     } finally {
@@ -135,7 +166,7 @@ export class AuthService {
     const response = await httpClient.post<{
       access_token: string;
       expires_in: number;
-    }>('/api/auth/refresh', {
+    }>('/api/v1/auth/refresh', {
       refresh_token: refreshToken
     }, { skipAuth: true });
 
@@ -168,7 +199,7 @@ export class AuthService {
     }
 
     // 从服务器获取最新用户信息
-    const user = await httpClient.get<User>('/api/auth/me');
+    const user = await httpClient.get<User>('/api/v1/auth/me');
     this.currentUser = user;
     localStorage.setItem('current_user', JSON.stringify(user));
 
@@ -184,7 +215,7 @@ export class AuthService {
     phone?: string;
     avatar_url?: string;
   }): Promise<User> {
-    const updatedUser = await httpClient.put<User>('/api/auth/profile', updates);
+    const updatedUser = await httpClient.put<User>('/api/v1/auth/profile', updates);
     this.currentUser = updatedUser;
     localStorage.setItem('current_user', JSON.stringify(updatedUser));
     return updatedUser;
@@ -201,7 +232,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.post('/api/auth/change-password', data);
+    return httpClient.post('/api/v1/auth/change-password', data);
   }
 
   /**
@@ -211,7 +242,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.post('/api/auth/password-reset', data, { skipAuth: true });
+    return httpClient.post('/api/v1/auth/password-reset', data, { skipAuth: true });
   }
 
   /**
@@ -221,7 +252,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.post('/api/auth/password-reset/confirm', data, { skipAuth: true });
+    return httpClient.post('/api/v1/auth/password-reset/confirm', data, { skipAuth: true });
   }
 
   /**
@@ -279,7 +310,7 @@ export class AuthService {
       currency: string;
     };
   }> {
-    return httpClient.get('/api/auth/tenant');
+    return httpClient.get('/api/v1/auth/tenant');
   }
 
   /**
@@ -301,7 +332,7 @@ export class AuthService {
       notification_preferences: Record<string, boolean>;
     };
   }> {
-    return httpClient.get('/api/auth/company');
+    return httpClient.get('/api/v1/auth/company');
   }
 
   /**
@@ -318,7 +349,7 @@ export class AuthService {
     invite_code?: string;
     invite_url?: string;
   }> {
-    return httpClient.post('/api/auth/invite', data);
+    return httpClient.post('/api/v1/auth/invite', data);
   }
 
   /**
@@ -342,7 +373,7 @@ export class AuthService {
     if (params.status) queryParams.append('status', params.status);
 
     const queryString = queryParams.toString();
-    const endpoint = `/api/auth/team${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/v1/auth/team${queryString ? `?${queryString}` : ''}`;
 
     return httpClient.get(endpoint);
   }
@@ -355,7 +386,7 @@ export class AuthService {
     permissions?: string[];
     is_active?: boolean;
   }): Promise<User> {
-    return httpClient.put(`/api/auth/team/${userId}`, updates);
+    return httpClient.put(`/api/v1/auth/team/${userId}`, updates);
   }
 
   /**
@@ -365,7 +396,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.delete(`/api/auth/team/${userId}`);
+    return httpClient.delete(`/api/v1/auth/team/${userId}`);
   }
 
   /**
@@ -378,7 +409,7 @@ export class AuthService {
     role?: string;
     expires_at?: string;
   }> {
-    return httpClient.get(`/api/auth/invite/validate/${inviteCode}`, { skipAuth: true });
+    return httpClient.get(`/api/v1/auth/invite/validate/${inviteCode}`, { skipAuth: true });
   }
 
   /**
@@ -392,7 +423,7 @@ export class AuthService {
     phone?: string;
   }): Promise<LoginResponse> {
     const response = await httpClient.post<LoginResponse>(
-      '/api/auth/register/invite',
+      '/api/v1/auth/register/invite',
       data,
       { skipAuth: true }
     );
@@ -439,7 +470,7 @@ export class AuthService {
     if (params.date_to) queryParams.append('date_to', params.date_to);
 
     const queryString = queryParams.toString();
-    const endpoint = `/api/auth/login-history${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/v1/auth/login-history${queryString ? `?${queryString}` : ''}`;
 
     return httpClient.get(endpoint);
   }
@@ -452,7 +483,7 @@ export class AuthService {
     secret_key: string;
     backup_codes: string[];
   }> {
-    return httpClient.post('/api/auth/2fa/enable');
+    return httpClient.post('/api/v1/auth/2fa/enable');
   }
 
   /**
@@ -462,7 +493,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.post('/api/auth/2fa/confirm', { code });
+    return httpClient.post('/api/v1/auth/2fa/confirm', { code });
   }
 
   /**
@@ -472,7 +503,7 @@ export class AuthService {
     success: boolean;
     message: string;
   }> {
-    return httpClient.post('/api/auth/2fa/disable', { password });
+    return httpClient.post('/api/v1/auth/2fa/disable', { password });
   }
 }
 

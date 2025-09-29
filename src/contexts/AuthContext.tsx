@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { authService } from '@/services/authService';
 
 // 开发环境：定义基本的用户接口，避免导入错误
 export interface User {
@@ -57,28 +58,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 检查认证状态
   const checkAuth = async (): Promise<boolean> => {
     try {
-      // 开发环境：检查是否有测试用户信息
-      const token = localStorage.getItem('access_token');
-      const storedUser = localStorage.getItem('current_user');
-
-      if (token === 'dev-test-token' && storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          setUser(user);
-          setIsAuthenticated(true);
-          console.log('Development mode: Restored test user session');
-          return true;
-        } catch (error) {
-          console.warn('Failed to parse stored test user:', error);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('current_user');
-        }
+      // 检查是否存在有效的认证状态
+      if (!authService.isAuthenticated()) {
+        setUser(null);
+        setIsAuthenticated(false);
+        return false;
       }
-      return false;
+
+      // 尝试获取当前用户信息
+      const user = await authService.getCurrentUser();
+      setUser(user);
+      setIsAuthenticated(true);
+      console.log('Auth restored for user:', user.username);
+      return true;
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
       setIsAuthenticated(false);
+      // 清理失效的认证信息
+      await authService.logout();
       return false;
     }
   };
@@ -88,41 +86,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
 
-      // 开发环境：支持测试账号快速登录
-      if (username === '13800138000' && password === '8888') {
-        console.log('Development mode: Using test account');
-        const mockUser = {
-          id: 'test-user-1',
-          username: '13800138000',
-          email: 'test@example.com',
-          phone: '13800138000',
-          full_name: '测试用户',
-          role: 'admin',
-          tenant_id: 'test-tenant',
-          company_id: 'test-company',
-          permissions: ['*'],
-          avatar_url: '',
-          last_login: new Date().toISOString(),
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
+      // 调用真实的认证服务
+      const credentials = {
+        identifier: username,  // 后端期望identifier字段
+        password: password
+      };
 
-        setUser(mockUser);
-        setIsAuthenticated(true);
+      // 首先设置默认租户ID用于登录请求
+      const defaultTenantId = tenantId || 'c99fef2a-bb59-4d02-a4e7-b79f6dfaf35c';
 
-        // 存储到 localStorage 以保持状态
-        localStorage.setItem('access_token', 'dev-test-token');
-        localStorage.setItem('current_user', JSON.stringify(mockUser));
+      // 确保租户ID在登录请求中传递
+      localStorage.setItem('tenant_id', defaultTenantId);
 
-        setIsLoading(false);
-        return;
-      }
+      // 使用特殊的登录方法，确保X-Tenant-ID头被发送
+      const loginResponse = await authService.loginWithTenant(credentials, defaultTenantId);
 
-      // 其他账号在开发环境下抛出错误
-      throw new Error('Invalid credentials');
+      // 设置用户状态
+      setUser(loginResponse.user);
+      setIsAuthenticated(true);
+
+      console.log('Login successful:', loginResponse.user);
     } catch (error) {
       console.error('Login failed:', error);
+      setUser(null);
+      setIsAuthenticated(false);
       throw error;
     } finally {
       setIsLoading(false);
@@ -133,8 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('current_user');
+      await authService.logout();
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -147,22 +133,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 更新用户信息
   const updateUser = async (updates: Partial<User>): Promise<void> => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('current_user', JSON.stringify(updatedUser));
+      try {
+        const updatedUser = await authService.updateProfile(updates);
+        setUser(updatedUser);
+      } catch (error) {
+        console.error('Update user failed:', error);
+        throw error;
+      }
     }
   };
 
   // 检查权限
   const hasPermission = (permission: string): boolean => {
-    if (!user) return false;
-    return user.permissions.includes(permission) || user.permissions.includes('*');
+    return authService.hasPermission(permission);
   };
 
   // 检查角色
   const hasRole = (role: string): boolean => {
-    if (!user) return false;
-    return user.role === role || user.role === 'admin';
+    return authService.hasRole(role);
   };
 
   // 初始化认证状态
